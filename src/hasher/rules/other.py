@@ -1,7 +1,7 @@
 """Normalizers for common types: builtins, numpy, pyarrow, pandas, sklearn."""
 from __future__ import annotations
 
-import dask.base
+import hashlib
 import types
 
 
@@ -58,7 +58,7 @@ def _make_lazy_rules():
 
         def normalize_pyarrow_table(table):
             return ("pa.Table", tuple(
-                dask.base.tokenize(el.serialize().to_pybytes())
+                hashlib.md5(el.serialize().to_pybytes()).hexdigest()
                 for el in table.to_batches()
             ))
 
