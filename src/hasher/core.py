@@ -17,6 +17,11 @@ _TAG_BYTES = b'\x05'
 _TAG_SEQ   = b'\x06'
 
 
+def fqn(typ: type) -> str:
+    """Return the fully qualified name of a type: '{module}.{qualname}'."""
+    return f"{typ.__module__}.{typ.__qualname__}"
+
+
 def _encode(obj) -> bytes:
     """Encode a normalized primitive structure to bytes deterministically."""
     out = []
@@ -63,24 +68,32 @@ def _write(obj, out: list) -> None:
 
 @frozen
 class Hasher:
-    """An immutable, inspectable registry of (type, normalize_fn) rules.
+    """An immutable, inspectable registry of (fqn, normalize_fn) rules.
 
-    Rules are evaluated in order; the first matching type wins.
-    Subclass resolution walks the MRO so you can register a base class and
-    have it apply to subclasses unless a more specific rule is listed first.
+    Rules are keyed by fully qualified type name ('{module}.{qualname}').
+    Lookup walks the MRO so subclasses match base class rules; among
+    multiple matches, the rule listed earliest wins.
 
     Normalizers must return primitive structures: nested tuples/lists of
     str, int, float, bool, bytes, or None. Objects within those structures
     that are not primitives will be recursively normalized using this hasher.
     """
 
-    rules: tuple = field(factory=tuple)  # tuple[tuple[type, Callable], ...]
+    rules: tuple = field(factory=tuple)  # tuple[tuple[str, Callable], ...]
 
     def normalize(self, obj):
         """Normalize obj to a primitive structure using registered rules."""
-        for typ, f in self.rules:
-            if isinstance(obj, typ):
-                return f(obj)
+        lookup = {name: (i, f) for i, (name, f) in enumerate(self.rules)}
+        best_idx, best_fn = None, None
+        for typ in type(obj).__mro__:
+            name = fqn(typ)
+            if name in lookup:
+                idx, f = lookup[name]
+                if best_idx is None or idx < best_idx:
+                    best_idx = idx
+                    best_fn = f
+        if best_fn is not None:
+            return best_fn(obj)
         raise ValueError(f"No normalizer registered for {type(obj)!r}: {obj!r}")
 
     def _normalize_recursive(self, obj):
@@ -97,15 +110,15 @@ class Hasher:
         return xxhash.xxh128(_encode(normalized)).hexdigest()
 
     def override(self, *rules: tuple) -> Hasher:
-        """Return a new Hasher with the given (type, fn) rules added or replacing existing ones."""
+        """Return a new Hasher with the given (fqn, fn) rules added or replacing existing ones."""
         base = dict(self.rules)
         base.update(rules)
         return Hasher(rules=tuple(base.items()))
 
-    def without(self, *types) -> Hasher:
-        """Return a new Hasher with rules for the given types removed."""
-        return Hasher(rules=tuple((t, f) for t, f in self.rules if t not in types))
+    def without(self, *fqns: str) -> Hasher:
+        """Return a new Hasher with rules for the given fqns removed."""
+        return Hasher(rules=tuple((name, f) for name, f in self.rules if name not in fqns))
 
     def __repr__(self):
-        type_names = [t.__name__ for t, _ in self.rules]
-        return f"Hasher(rules=[{', '.join(type_names)}])"
+        names = [name for name, _ in self.rules]
+        return f"Hasher(rules=[{', '.join(names)}])"

@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import types
+import xxhash
+
+from hasher.core import fqn
 
 
 def normalize_type(typ):
@@ -16,8 +19,8 @@ def normalize_module(module):
     return ("module", module.__name__, module.__package__)
 
 
-def _make_lazy_rules():
-    """Return rules that depend on optional imports. Call once at Hasher build time."""
+def _make_optional_rules():
+    """Return rules for optional dependencies available at import time."""
     rules = []
 
     try:
@@ -30,8 +33,8 @@ def _make_lazy_rules():
             return ("numpy.ufunc", func.__name__, func.__module__)
 
         rules += [
-            (np.random.RandomState, normalize_numpy_random_state),
-            (type(np.mean), normalize_numpy_array_function_dispatcher),
+            (fqn(np.random.RandomState), normalize_numpy_random_state),
+            (fqn(type(np.mean)), normalize_numpy_array_function_dispatcher),
         ]
     except ImportError:
         pass
@@ -46,8 +49,8 @@ def _make_lazy_rules():
             return ("pd.Timestamp", str(timestamp))
 
         rules += [
-            (pd._libs.interval.Interval, normalize_interval),
-            (pd._libs.tslibs.timestamps.Timestamp, normalize_timestamp),
+            (fqn(pd._libs.interval.Interval), normalize_interval),
+            (fqn(pd._libs.tslibs.timestamps.Timestamp), normalize_timestamp),
         ]
     except ImportError:
         pass
@@ -56,7 +59,6 @@ def _make_lazy_rules():
         import pyarrow as pa
 
         def normalize_pyarrow_table(table):
-            import xxhash
             return ("pa.Table", tuple(
                 xxhash.xxh128(el.serialize().to_pybytes()).hexdigest()
                 for el in table.to_batches()
@@ -66,8 +68,8 @@ def _make_lazy_rules():
             return ("pa.Schema", str(schema))
 
         rules += [
-            (pa.Table, normalize_pyarrow_table),
-            (pa.Schema, normalize_pyarrow_schema),
+            (fqn(pa.Table), normalize_pyarrow_table),
+            (fqn(pa.Schema), normalize_pyarrow_schema),
         ]
     except ImportError:
         pass
@@ -84,15 +86,15 @@ def _make_lazy_rules():
                 params,
             )
 
-        rules += [(BaseEstimator, normalize_sklearn_estimator)]
+        rules += [(fqn(BaseEstimator), normalize_sklearn_estimator)]
     except ImportError:
         pass
 
     return rules
 
 
-EAGER_RULES: list[tuple] = [
-    (type, normalize_type),
-    (dict, normalize_dict),
-    (types.ModuleType, normalize_module),
+RULES: list[tuple] = [
+    (fqn(type), normalize_type),
+    (fqn(dict), normalize_dict),
+    (fqn(types.ModuleType), normalize_module),
 ]

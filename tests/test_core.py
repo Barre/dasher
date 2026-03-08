@@ -1,5 +1,5 @@
 import pytest
-from hasher import Hasher, DEFAULT_HASHER
+from hasher import Hasher, DEFAULT_HASHER, fqn
 from hasher.core import _encode
 
 
@@ -70,7 +70,7 @@ def test_encode_rejects_unknown_type():
 # --- Hasher.normalize ---
 
 def test_normalize_exact_type():
-    h = Hasher(rules=((int, normalize_int),))
+    h = Hasher(rules=((fqn(int), normalize_int),))
     assert h.normalize(42) == ("int", 42)
 
 
@@ -78,7 +78,7 @@ def test_normalize_subclass():
     class MyInt(int):
         pass
 
-    h = Hasher(rules=((int, normalize_int),))
+    h = Hasher(rules=((fqn(int), normalize_int),))
     assert h.normalize(MyInt(5)) == ("int", 5)
 
 
@@ -90,10 +90,21 @@ def test_normalize_first_match_wins():
         pass
 
     h = Hasher(rules=(
-        (Sub, lambda x: "sub"),
-        (Base, lambda x: "base"),
+        (fqn(Sub), lambda x: "sub"),
+        (fqn(Base), lambda x: "base"),
     ))
     assert h.normalize(Sub()) == "sub"
+
+
+def test_normalize_base_rule_matches_subclass_when_no_specific_rule():
+    class Base:
+        pass
+
+    class Sub(Base):
+        pass
+
+    h = Hasher(rules=((fqn(Base), lambda x: "base"),))
+    assert h.normalize(Sub()) == "base"
 
 
 def test_normalize_missing_raises():
@@ -102,23 +113,29 @@ def test_normalize_missing_raises():
         h.normalize(42)
 
 
+def test_normalize_string_key_no_import_needed():
+    # rules can be registered using a hardcoded fqn string
+    h = Hasher(rules=(("builtins.int", normalize_int),))
+    assert h.normalize(42) == ("int", 42)
+
+
 def test_override_replaces_rule():
-    h = Hasher(rules=((int, normalize_int),))
-    h2 = h.override((int, lambda x: ("custom", x)))
+    h = Hasher(rules=((fqn(int), normalize_int),))
+    h2 = h.override((fqn(int), lambda x: ("custom", x)))
     assert h2.normalize(42) == ("custom", 42)
     assert h.normalize(42) == ("int", 42)  # original unchanged
 
 
 def test_override_adds_rule():
-    h = Hasher(rules=((int, normalize_int),))
-    h2 = h.override((str, normalize_str))
+    h = Hasher(rules=((fqn(int), normalize_int),))
+    h2 = h.override((fqn(str), normalize_str))
     assert h2.normalize(42) == ("int", 42)
     assert h2.normalize("hi") == ("str", "hi")
 
 
 def test_without_removes_rule():
-    h = Hasher(rules=((int, normalize_int), (str, normalize_str)))
-    h2 = h.without(int)
+    h = Hasher(rules=((fqn(int), normalize_int), (fqn(str), normalize_str)))
+    h2 = h.without(fqn(int))
     with pytest.raises(ValueError):
         h2.normalize(42)
     assert h2.normalize("hi") == ("str", "hi")
@@ -127,17 +144,17 @@ def test_without_removes_rule():
 # --- Hasher.tokenize ---
 
 def test_tokenize_same_value_same_token():
-    h = Hasher(rules=((int, normalize_int),))
+    h = Hasher(rules=((fqn(int), normalize_int),))
     assert h.tokenize(42) == h.tokenize(42)
 
 
 def test_tokenize_different_values_different_tokens():
-    h = Hasher(rules=((int, normalize_int),))
+    h = Hasher(rules=((fqn(int), normalize_int),))
     assert h.tokenize(42) != h.tokenize(43)
 
 
 def test_tokenize_returns_hex_string():
-    h = Hasher(rules=((int, normalize_int),))
+    h = Hasher(rules=((fqn(int), normalize_int),))
     token = h.tokenize(42)
     assert isinstance(token, str)
     assert len(token) == 32  # xxh128 = 128 bits = 32 hex chars
@@ -155,6 +172,6 @@ def test_default_hasher_dict_order_invariant():
 
 
 def test_immutability():
-    h = Hasher(rules=((int, normalize_int),))
+    h = Hasher(rules=((fqn(int), normalize_int),))
     with pytest.raises(Exception):
         h.rules = ()
