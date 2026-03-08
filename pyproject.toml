@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "declarative-hasher"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "attrs",
+    "dask",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hasher"]
