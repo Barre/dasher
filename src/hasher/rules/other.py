@@ -19,82 +19,57 @@ def normalize_module(module):
     return ("module", module.__name__, module.__package__)
 
 
-def _make_optional_rules():
-    """Return rules for optional dependencies available at import time."""
-    rules = []
+def normalize_numpy_random_state(random_state):
+    return ("numpy.RandomState", random_state.get_state())
 
-    try:
-        import numpy as np
 
-        def normalize_numpy_random_state(random_state):
-            return ("numpy.RandomState", random_state.get_state())
+def normalize_numpy_array_function_dispatcher(func):
+    return ("numpy.ufunc", func.__name__, func.__module__)
 
-        def normalize_numpy_array_function_dispatcher(func):
-            return ("numpy.ufunc", func.__name__, func.__module__)
 
-        rules += [
-            (fqn(np.random.RandomState), normalize_numpy_random_state),
-            (fqn(type(np.mean)), normalize_numpy_array_function_dispatcher),
-        ]
-    except ImportError:
-        pass
+def normalize_interval(interval):
+    return ("pd.Interval", interval.left, interval.right, interval.closed)
 
-    try:
-        import pandas as pd
 
-        def normalize_interval(interval):
-            return ("pd.Interval", interval.left, interval.right, interval.closed)
+def normalize_timestamp(timestamp):
+    return ("pd.Timestamp", str(timestamp))
 
-        def normalize_timestamp(timestamp):
-            return ("pd.Timestamp", str(timestamp))
 
-        rules += [
-            (fqn(pd._libs.interval.Interval), normalize_interval),
-            (fqn(pd._libs.tslibs.timestamps.Timestamp), normalize_timestamp),
-        ]
-    except ImportError:
-        pass
+def normalize_pyarrow_table(table):
+    return ("pa.Table", tuple(
+        xxhash.xxh128(el.serialize().to_pybytes()).hexdigest()
+        for el in table.to_batches()
+    ))
 
-    try:
-        import pyarrow as pa
 
-        def normalize_pyarrow_table(table):
-            return ("pa.Table", tuple(
-                xxhash.xxh128(el.serialize().to_pybytes()).hexdigest()
-                for el in table.to_batches()
-            ))
+def normalize_pyarrow_schema(schema):
+    return ("pa.Schema", str(schema))
 
-        def normalize_pyarrow_schema(schema):
-            return ("pa.Schema", str(schema))
 
-        rules += [
-            (fqn(pa.Table), normalize_pyarrow_table),
-            (fqn(pa.Schema), normalize_pyarrow_schema),
-        ]
-    except ImportError:
-        pass
-
-    try:
-        from sklearn.base import BaseEstimator
-
-        def normalize_sklearn_estimator(estimator):
-            params = tuple(sorted(estimator.get_params(deep=True).items()))
-            return (
-                "sklearn.estimator",
-                type(estimator).__name__,
-                type(estimator).__module__,
-                params,
-            )
-
-        rules += [(fqn(BaseEstimator), normalize_sklearn_estimator)]
-    except ImportError:
-        pass
-
-    return rules
+def normalize_sklearn_estimator(estimator):
+    params = tuple(sorted(estimator.get_params(deep=True).items()))
+    return (
+        "sklearn.estimator",
+        type(estimator).__name__,
+        type(estimator).__module__,
+        params,
+    )
 
 
 RULES: list[tuple] = [
-    (fqn(type), normalize_type),
-    (fqn(dict), normalize_dict),
+    (fqn(type),             normalize_type),
+    (fqn(dict),             normalize_dict),
     (fqn(types.ModuleType), normalize_module),
+    # numpy
+    ("numpy.random.mtrand.RandomState",                          normalize_numpy_random_state),
+    ("numpy.core._multiarray_umath._ArrayFunctionDispatcher",    normalize_numpy_array_function_dispatcher),  # numpy <2.0
+    ("numpy._core._multiarray_umath._ArrayFunctionDispatcher",   normalize_numpy_array_function_dispatcher),  # numpy >=2.0
+    # pandas
+    ("pandas._libs.interval.Interval",              normalize_interval),
+    ("pandas._libs.tslibs.timestamps.Timestamp",    normalize_timestamp),
+    # pyarrow
+    ("pyarrow.lib.Table",   normalize_pyarrow_table),
+    ("pyarrow.lib.Schema",  normalize_pyarrow_schema),
+    # sklearn
+    ("sklearn.base.BaseEstimator", normalize_sklearn_estimator),
 ]
