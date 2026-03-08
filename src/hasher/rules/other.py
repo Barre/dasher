@@ -1,7 +1,6 @@
 """Normalizers for common types: builtins, numpy, pyarrow, pandas, sklearn."""
 from __future__ import annotations
 
-import hashlib
 import types
 
 
@@ -57,8 +56,9 @@ def _make_lazy_rules():
         import pyarrow as pa
 
         def normalize_pyarrow_table(table):
+            import xxhash
             return ("pa.Table", tuple(
-                hashlib.md5(el.serialize().to_pybytes()).hexdigest()
+                xxhash.xxh128(el.serialize().to_pybytes()).hexdigest()
                 for el in table.to_batches()
             ))
 

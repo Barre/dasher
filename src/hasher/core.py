@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import hashlib
 import pickle
+
+import xxhash
 from attr import frozen, field
 
 
@@ -41,7 +42,7 @@ class Hasher:
     def tokenize(self, *objs):
         """Return a deterministic hex digest for the given objects."""
         normalized = tuple(self._normalize_recursive(obj) for obj in objs)
-        return hashlib.md5(pickle.dumps(normalized, protocol=5)).hexdigest()
+        return xxhash.xxh128(pickle.dumps(normalized, protocol=5)).hexdigest()
 
     def override(self, *rules: tuple) -> Hasher:
         """Return a new Hasher with the given (type, fn) rules added or replacing existing ones."""
