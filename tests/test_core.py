@@ -1,5 +1,6 @@
 import pytest
 from hasher import Hasher, DEFAULT_HASHER
+from hasher.core import _encode
 
 
 def normalize_int(x):
@@ -9,6 +10,64 @@ def normalize_int(x):
 def normalize_str(x):
     return ("str", x)
 
+
+# --- _encode ---
+
+def test_encode_none():
+    assert _encode(None) == b'\x00'
+
+
+def test_encode_bool():
+    assert _encode(True) != _encode(False)
+    assert _encode(True) != _encode(1)   # bool and int must be distinct
+
+
+def test_encode_int_zero():
+    assert _encode(0) == _encode(0)
+
+
+def test_encode_int_positive_negative_distinct():
+    assert _encode(1) != _encode(-1)
+
+
+def test_encode_large_int():
+    big = 2 ** 128 + 1
+    assert _encode(big) != _encode(big - 1)
+
+
+def test_encode_float():
+    assert _encode(1.0) != _encode(1)   # float and int must be distinct
+    assert _encode(1.5) == _encode(1.5)
+
+
+def test_encode_str():
+    assert _encode("hello") != _encode(b"hello")  # str and bytes must be distinct
+    assert _encode("a") != _encode("b")
+
+
+def test_encode_bytes():
+    assert _encode(b"x") == _encode(b"x")
+    assert _encode(b"x") != _encode(b"y")
+
+
+def test_encode_seq_order_matters():
+    assert _encode(("a", "b")) != _encode(("b", "a"))
+
+
+def test_encode_seq_length_matters():
+    assert _encode(("a",)) != _encode(("a", "a"))
+
+
+def test_encode_nested():
+    assert _encode((("a", 1), (True, None))) == _encode((("a", 1), (True, None)))
+
+
+def test_encode_rejects_unknown_type():
+    with pytest.raises(TypeError, match="Cannot encode"):
+        _encode(object())
+
+
+# --- Hasher.normalize ---
 
 def test_normalize_exact_type():
     h = Hasher(rules=((int, normalize_int),))
@@ -65,6 +124,8 @@ def test_without_removes_rule():
     assert h2.normalize("hi") == ("str", "hi")
 
 
+# --- Hasher.tokenize ---
+
 def test_tokenize_same_value_same_token():
     h = Hasher(rules=((int, normalize_int),))
     assert h.tokenize(42) == h.tokenize(42)
@@ -73,6 +134,14 @@ def test_tokenize_same_value_same_token():
 def test_tokenize_different_values_different_tokens():
     h = Hasher(rules=((int, normalize_int),))
     assert h.tokenize(42) != h.tokenize(43)
+
+
+def test_tokenize_returns_hex_string():
+    h = Hasher(rules=((int, normalize_int),))
+    token = h.tokenize(42)
+    assert isinstance(token, str)
+    assert len(token) == 32  # xxh128 = 128 bits = 32 hex chars
+    int(token, 16)  # valid hex
 
 
 def test_default_hasher_handles_dict():
