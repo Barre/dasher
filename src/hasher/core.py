@@ -30,40 +30,41 @@ def _encode(obj) -> bytes:
 
 
 def _write(obj, out: list) -> None:
-    if obj is None:
-        out.append(_TAG_NONE)
-    elif isinstance(obj, bool):
-        out.append(_TAG_BOOL)
-        out.append(b'\x01' if obj else b'\x00')
-    elif isinstance(obj, int):
-        out.append(_TAG_INT)
-        sign = b'\x01' if obj < 0 else b'\x00'
-        magnitude = abs(obj).to_bytes((abs(obj).bit_length() + 7) // 8 or 1, 'little')
-        out.append(sign)
-        out.append(struct.pack('<I', len(magnitude)))
-        out.append(magnitude)
-    elif isinstance(obj, float):
-        out.append(_TAG_FLOAT)
-        out.append(struct.pack('<d', obj))
-    elif isinstance(obj, str):
-        encoded = obj.encode('utf-8')
-        out.append(_TAG_STR)
-        out.append(struct.pack('<I', len(encoded)))
-        out.append(encoded)
-    elif isinstance(obj, bytes):
-        out.append(_TAG_BYTES)
-        out.append(struct.pack('<I', len(obj)))
-        out.append(obj)
-    elif isinstance(obj, (tuple, list)):
-        out.append(_TAG_SEQ)
-        out.append(struct.pack('<I', len(obj)))
-        for el in obj:
-            _write(el, out)
-    else:
-        raise TypeError(
-            f"Cannot encode type {type(obj).__name__!r} in normalized structure; "
-            "normalizers must return nested tuples/lists of str, int, float, bool, bytes, or None"
-        )
+    match obj:
+        case None:
+            out.append(_TAG_NONE)
+        case bool():
+            out.append(_TAG_BOOL)
+            out.append(b'\x01' if obj else b'\x00')
+        case int():
+            out.append(_TAG_INT)
+            sign = b'\x01' if obj < 0 else b'\x00'
+            magnitude = abs(obj).to_bytes((abs(obj).bit_length() + 7) // 8 or 1, 'little')
+            out.append(sign)
+            out.append(struct.pack('<I', len(magnitude)))
+            out.append(magnitude)
+        case float():
+            out.append(_TAG_FLOAT)
+            out.append(struct.pack('<d', obj))
+        case str():
+            encoded = obj.encode('utf-8')
+            out.append(_TAG_STR)
+            out.append(struct.pack('<I', len(encoded)))
+            out.append(encoded)
+        case bytes():
+            out.append(_TAG_BYTES)
+            out.append(struct.pack('<I', len(obj)))
+            out.append(obj)
+        case tuple() | list():
+            out.append(_TAG_SEQ)
+            out.append(struct.pack('<I', len(obj)))
+            for el in obj:
+                _write(el, out)
+        case _:
+            raise TypeError(
+                f"Cannot encode type {type(obj).__name__!r} in normalized structure; "
+                "normalizers must return nested tuples/lists of str, int, float, bool, bytes, or None"
+            )
 
 
 @frozen
