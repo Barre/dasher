@@ -192,6 +192,21 @@ def test_tokenize_returns_hex_string():
     int(token, 16)  # valid hex
 
 
+def test_dict_with_nonprimitive_values():
+    # normalize_dict returns raw values in a tuple structure;
+    # _normalize_recursive handles them on the way back up.
+    class Obj:
+        def __init__(self, x):
+            self.x = x
+
+    h = Hasher(rules=(
+        (fqn(dict), lambda d: ("dict", tuple(sorted(d.items())))),
+        (fqn(Obj), lambda o: ("Obj", o.x)),
+    ))
+    assert h.tokenize({"k": Obj(1)}) == h.tokenize({"k": Obj(1)})
+    assert h.tokenize({"k": Obj(1)}) != h.tokenize({"k": Obj(2)})
+
+
 def test_default_dasher_handles_dict():
     t = DEFAULT_HASHER.tokenize({"a": 1, "b": 2})
     assert isinstance(t, str)
