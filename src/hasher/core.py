@@ -117,8 +117,8 @@ class Hasher:
         prepended so they take priority over any existing base-class rules.
         """
         overrides = dict(rules)
-        updated = [(k, overrides.pop(k, f)) for k, f in self.rules]
-        new = list(overrides.items())
+        updated = tuple((k, overrides.pop(k, f)) for k, f in self.rules)
+        new = tuple(overrides.items())
         return Hasher(rules=tuple(new + updated))
 
     def without(self, *fqns: str) -> Hasher:
