@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "declarative-hasher"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "attrs",
     "xxhash",
@@ -18,3 +18,10 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hasher"]
+
+[dependency-groups]
+dev = [
+    "duckdb>=1.5.0",
+    "ipython>=9.10.0",
+    "xorq",
+]
