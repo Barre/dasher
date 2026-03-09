@@ -31,9 +31,9 @@ def normalize_backend(con):
 def _build_rules():
     try:
         from xorq.vendor import ibis
-        return [(fqn(ibis.backends.BaseBackend), normalize_backend)]
+        return ((fqn(ibis.backends.BaseBackend), normalize_backend),)
     except ImportError:
-        return []
+        return ()
 
 
-RULES: list[tuple] = _build_rules()
+RULES: tuple = _build_rules()

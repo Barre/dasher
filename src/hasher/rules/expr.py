@@ -320,7 +320,7 @@ def _build_rules():
         from xorq.vendor.ibis.expr.operations.udf import AggUDF, InputType, ScalarUDF
         from xorq.vendor.ibis import expr as ibis_expr
 
-        return [
+        return (
             (fqn(ibis_expr.types.Expr),   normalize_expr),
             (fqn(ir.DatabaseTable),        normalize_databasetable),
             (fqn(ir.Schema),               normalize_schema),
@@ -332,9 +332,9 @@ def _build_rules():
             (fqn(InputType),               normalize_input_type),
             (fqn(ScalarUDF),               normalize_scalar_udf),
             (fqn(AggUDF),                  normalize_agg_udf),
-        ]
+        )
     except ImportError:
-        return []
+        return ()
 
 
-RULES: list[tuple] = _build_rules()
+RULES: tuple = _build_rules()

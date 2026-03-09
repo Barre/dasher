@@ -56,7 +56,7 @@ def normalize_sklearn_estimator(estimator):
     )
 
 
-RULES: list[tuple] = [
+RULES: tuple = (
     (fqn(type),             normalize_type),
     (fqn(dict),             normalize_dict),
     (fqn(types.ModuleType), normalize_module),
@@ -72,4 +72,4 @@ RULES: list[tuple] = [
     ("pyarrow.lib.Schema",  normalize_pyarrow_schema),
     # sklearn
     ("sklearn.base.BaseEstimator", normalize_sklearn_estimator),
-]
+)
