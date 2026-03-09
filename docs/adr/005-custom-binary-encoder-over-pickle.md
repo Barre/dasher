@@ -14,7 +14,7 @@ protocol=5)`.
 ## Decision
 
 Replace `pickle.dumps` with a custom type-tagged binary encoder (`_encode` /
-`_write` in `hasher/core.py`).
+`_write` in `dasher/core.py`).
 
 The encoder uses single-byte type tags and length-prefixed payloads:
 

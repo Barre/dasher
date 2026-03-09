@@ -1,7 +1,7 @@
 """Normalizers for ibis/xorq backend connections."""
 from __future__ import annotations
 
-from hasher.core import defaulting, fqn
+from dasher.core import defaulting, fqn
 
 
 def normalize_backend(con):

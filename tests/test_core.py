@@ -1,6 +1,6 @@
 import pytest
-from hasher import Hasher, DEFAULT_HASHER, fqn
-from hasher.core import _encode
+from dasher import Hasher, DEFAULT_HASHER, fqn
+from dasher.core import _encode
 
 
 def normalize_int(x):
@@ -192,12 +192,12 @@ def test_tokenize_returns_hex_string():
     int(token, 16)  # valid hex
 
 
-def test_default_hasher_handles_dict():
+def test_default_dasher_handles_dict():
     t = DEFAULT_HASHER.tokenize({"a": 1, "b": 2})
     assert isinstance(t, str)
 
 
-def test_default_hasher_dict_order_invariant():
+def test_default_dasher_dict_order_invariant():
     h = DEFAULT_HASHER
     assert h.tokenize({"a": 1, "b": 2}) == h.tokenize({"b": 2, "a": 1})
 

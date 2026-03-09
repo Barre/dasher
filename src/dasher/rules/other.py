@@ -4,7 +4,7 @@ from __future__ import annotations
 import types
 import xxhash
 
-from hasher.core import fqn
+from dasher.core import fqn
 
 
 def normalize_type(typ):

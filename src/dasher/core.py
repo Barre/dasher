@@ -90,7 +90,7 @@ class Hasher:
 
     Normalizers must return primitive structures: nested tuples/lists of
     str, int, float, bool, bytes, or None. Objects within those structures
-    that are not primitives will be recursively normalized using this hasher.
+    that are not primitives will be recursively normalized using this dasher.
     """
 
     rules: tuple = field(factory=tuple)  # tuple[tuple[str, Callable], ...]

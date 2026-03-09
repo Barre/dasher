@@ -44,7 +44,7 @@ DEFAULT_HASHER = Hasher(rules=(
     ...
 ))
 
-snapshot_hasher = DEFAULT_HASHER.override(
+snapshot_dasher = DEFAULT_HASHER.override(
     ("xorq.vendor.ibis.backends.BaseBackend", snapshot_normalize_backend),
 )
 ```
@@ -57,7 +57,7 @@ snapshot_hasher = DEFAULT_HASHER.override(
 - Import order does not affect correctness — `DEFAULT_HASHER` is constructed
   explicitly, not accumulated across imports
 - Overrides are first-class: `Hasher.override()` returns a new `Hasher`
-  without mutating anything, making it safe to create context-specific hashers
+  without mutating anything, making it safe to create context-specific dashers
   (e.g. per-strategy) without risk of leaking state
 - `Hasher` instances are `attrs` frozen dataclasses — immutable, comparable,
   and inspectable

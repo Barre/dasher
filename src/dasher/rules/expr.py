@@ -9,8 +9,8 @@ import urllib.request
 
 import xxhash
 
-from hasher.core import defaulting, fqn
-from hasher.rules.backends import normalize_backend
+from dasher.core import defaulting, fqn
+from dasher.rules.backends import normalize_backend
 
 
 # --- in-memory tables ---
