@@ -111,10 +111,15 @@ class Hasher:
         return xxhash.xxh128(_encode(normalized)).hexdigest()
 
     def override(self, *rules: tuple) -> Hasher:
-        """Return a new Hasher with the given (fqn, fn) rules added or replacing existing ones."""
-        base = dict(self.rules)
-        base.update(rules)
-        return Hasher(rules=tuple(base.items()))
+        """Return a new Hasher with the given (fqn, fn) rules added or replacing existing ones.
+
+        Existing rules are updated in-place (position preserved). New rules are
+        prepended so they take priority over any existing base-class rules.
+        """
+        overrides = dict(rules)
+        updated = [(k, overrides.pop(k, f)) for k, f in self.rules]
+        new = list(overrides.items())
+        return Hasher(rules=tuple(new + updated))
 
     def without(self, *fqns: str) -> Hasher:
         """Return a new Hasher with rules for the given fqns removed."""

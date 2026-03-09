@@ -133,6 +133,37 @@ def test_override_adds_rule():
     assert h2.normalize("hi") == ("str", "hi")
 
 
+def test_override_new_rule_takes_priority_over_base():
+    # Sub has no rule; Base does. Adding a Sub rule via override should
+    # take priority over the existing Base rule (not be buried at the end).
+    class Base:
+        pass
+
+    class Sub(Base):
+        pass
+
+    h = Hasher(rules=((fqn(Base), lambda x: "base"),))
+    h2 = h.override((fqn(Sub), lambda x: "sub"))
+    assert h2.normalize(Sub()) == "sub"
+
+
+def test_override_existing_rule_preserves_position():
+    # Overriding an existing rule should keep it in the same position,
+    # not move it to the front or back.
+    class A: pass
+    class B: pass
+    class C: pass
+
+    h = Hasher(rules=(
+        (fqn(A), lambda x: "a"),
+        (fqn(B), lambda x: "b"),
+        (fqn(C), lambda x: "c"),
+    ))
+    h2 = h.override((fqn(B), lambda x: "b2"))
+    assert [k for k, _ in h2.rules] == [fqn(A), fqn(B), fqn(C)]
+    assert h2.normalize(B()) == "b2"
+
+
 def test_without_removes_rule():
     h = Hasher(rules=((fqn(int), normalize_int), (fqn(str), normalize_str)))
     h2 = h.without(fqn(int))
