@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import struct
+from functools import partial
 
 import xxhash
 from attr import frozen, field
+from toolz import curry, excepts, identity
 
 
 _PRIMITIVES = (str, int, float, bool, bytes, type(None))
@@ -15,6 +17,17 @@ _TAG_FLOAT = b'\x03'
 _TAG_STR   = b'\x04'
 _TAG_BYTES = b'\x05'
 _TAG_SEQ   = b'\x06'
+
+
+def return_constant(value):
+    def wrapped(*args, **kwargs):
+        return value
+    return wrapped
+
+
+@curry
+def defaulting(exc, default, func):
+    return excepts(exc, func, return_constant(default))
 
 
 def fqn(typ: type) -> str:

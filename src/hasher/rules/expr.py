@@ -9,7 +9,7 @@ import urllib.request
 
 import xxhash
 
-from hasher.core import fqn
+from hasher.core import defaulting, fqn
 from hasher.rules.backends import normalize_backend
 
 
@@ -312,29 +312,27 @@ def normalize_expr(expr):
     )
 
 
+@defaulting(ImportError, ())
 def _build_rules():
-    try:
-        import xorq.expr.datatypes as dat
-        import xorq.expr.relations as rel
-        import xorq.vendor.ibis.expr.operations.relations as ir
-        from xorq.vendor.ibis.expr.operations.udf import AggUDF, InputType, ScalarUDF
-        from xorq.vendor.ibis import expr as ibis_expr
+    import xorq.expr.datatypes as dat
+    import xorq.expr.relations as rel
+    import xorq.vendor.ibis.expr.operations.relations as ir
+    from xorq.vendor.ibis.expr.operations.udf import AggUDF, InputType, ScalarUDF
+    from xorq.vendor.ibis import expr as ibis_expr
 
-        return (
-            (fqn(ibis_expr.types.Expr),   normalize_expr),
-            (fqn(ir.DatabaseTable),        normalize_databasetable),
-            (fqn(ir.Schema),               normalize_schema),
-            (fqn(ir.Namespace),            normalize_namespace),
-            (fqn(rel.Read),                normalize_read),
-            (fqn(rel.RemoteTable),         normalize_remote_table),
-            (fqn(rel.CachedNode),          normalize_cached_node),
-            (fqn(dat.DataType),            normalize_ibis_datatype),
-            (fqn(InputType),               normalize_input_type),
-            (fqn(ScalarUDF),               normalize_scalar_udf),
-            (fqn(AggUDF),                  normalize_agg_udf),
-        )
-    except ImportError:
-        return ()
+    return (
+        (fqn(ibis_expr.types.Expr),   normalize_expr),
+        (fqn(ir.DatabaseTable),        normalize_databasetable),
+        (fqn(ir.Schema),               normalize_schema),
+        (fqn(ir.Namespace),            normalize_namespace),
+        (fqn(rel.Read),                normalize_read),
+        (fqn(rel.RemoteTable),         normalize_remote_table),
+        (fqn(rel.CachedNode),          normalize_cached_node),
+        (fqn(dat.DataType),            normalize_ibis_datatype),
+        (fqn(InputType),               normalize_input_type),
+        (fqn(ScalarUDF),               normalize_scalar_udf),
+        (fqn(AggUDF),                  normalize_agg_udf),
+    )
 
 
 RULES: tuple = _build_rules()

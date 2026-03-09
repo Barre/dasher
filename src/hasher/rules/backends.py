@@ -1,7 +1,7 @@
 """Normalizers for ibis/xorq backend connections."""
 from __future__ import annotations
 
-from hasher.core import fqn
+from hasher.core import defaulting, fqn
 
 
 def normalize_backend(con):
@@ -28,12 +28,10 @@ def normalize_backend(con):
             raise ValueError(f"no normalization rule for backend {name!r}")
 
 
+@defaulting(ImportError, ())
 def _build_rules():
-    try:
-        from xorq.vendor import ibis
-        return ((fqn(ibis.backends.BaseBackend), normalize_backend),)
-    except ImportError:
-        return ()
+    from xorq.vendor import ibis
+    return ((fqn(ibis.backends.BaseBackend), normalize_backend),)
 
 
 RULES: tuple = _build_rules()
