@@ -172,7 +172,7 @@ def test_normalize_cell_different_values():
 def test_normalize_cell_empty():
     cell = types.CellType()
     result = normalize_cell(cell)
-    assert result[0] == "cell"
+    assert result == ("cell", "__empty_cell__")
 
 
 def test_normalize_cell_empty_stable():
@@ -190,6 +190,11 @@ def test_normalize_cell_empty_differs_from_filled():
         return inner
     filled = make().__closure__[0]
     assert normalize_cell(empty) != normalize_cell(filled)
+
+
+def test_tokenize_empty_cell():
+    cell = types.CellType()
+    assert DEFAULT_HASHER.tokenize(cell) == DEFAULT_HASHER.tokenize(cell)
 
 
 # --- normalize_function direct ---
@@ -230,6 +235,16 @@ def test_classmethod_normalize_function_contains_name():
     assert "m" in result
 
 
+def test_classmethod_body_change_affects_token():
+    ns1, ns2 = {}, {}
+    exec("class C:\n @classmethod\n def m(cls): return 1\n", ns1)
+    exec("class C:\n @classmethod\n def m(cls): return 99999\n", ns2)
+    cm1 = ns1["C"].__dict__["m"]
+    cm2 = ns2["C"].__dict__["m"]
+    assert cm1.__qualname__ == cm2.__qualname__
+    assert DEFAULT_HASHER.tokenize(cm1) != DEFAULT_HASHER.tokenize(cm2)
+
+
 def test_staticmethod_normalization():
     class A:
         @staticmethod
@@ -258,7 +273,7 @@ def test_staticmethod_normalize_function_contains_name():
 
 # --- fallback ---
 
-def test_dask_tokenize_fallback_used():
+def test_dasher_tokenize_fallback_used():
     class Custom:
         def __init__(self, x):
             self.x = x

@@ -35,6 +35,8 @@ _FUNCTION_ATTRS = (
 
 
 def normalize_function(func):
+    if isinstance(func, (classmethod, staticmethod)):
+        func = func.__func__
     return ("function", *(getattr(func, a, None) for a in _FUNCTION_ATTRS))
 
 
@@ -42,14 +44,11 @@ def normalize_code(code):
     return ("code", *(getattr(code, a, None) for a in _CODE_ATTRS))
 
 
-_EMPTY_CELL = object()
-
-
 def normalize_cell(cell):
     try:
         contents = cell.cell_contents
     except ValueError:
-        contents = _EMPTY_CELL
+        return ("cell", "__empty_cell__")
     return ("cell", contents)
 
 
