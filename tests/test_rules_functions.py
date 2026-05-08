@@ -262,7 +262,7 @@ def test_dask_tokenize_fallback_used():
     class Custom:
         def __init__(self, x):
             self.x = x
-        def __dask_tokenize__(self):
+        def __dasher_tokenize__(self):
             return ("custom", self.x)
 
     assert DEFAULT_HASHER.tokenize(Custom(1)) == DEFAULT_HASHER.tokenize(Custom(1))
@@ -278,7 +278,7 @@ def test_no_rule_no_dunder_raises():
 
 def test_fallback_skips_dask_tokenize_on_classes():
     class WithDunder:
-        def __dask_tokenize__(self):
+        def __dasher_tokenize__(self):
             return ("instance_method",)
 
     with pytest.raises(ValueError, match="No normalizer"):
@@ -289,13 +289,13 @@ def test_fallback_nonprimitive_return_is_recursively_normalized():
     class Inner:
         def __init__(self, x):
             self.x = x
-        def __dask_tokenize__(self):
+        def __dasher_tokenize__(self):
             return ("inner", self.x)
 
     class Outer:
         def __init__(self, inner):
             self.inner = inner
-        def __dask_tokenize__(self):
+        def __dasher_tokenize__(self):
             return ("outer", self.inner)
 
     assert DEFAULT_HASHER.tokenize(Outer(Inner(1))) == DEFAULT_HASHER.tokenize(Outer(Inner(1)))
@@ -306,7 +306,7 @@ def test_specific_rule_wins_over_object_fallback():
     # Sanity: an explicit rule for a class beats the builtins.object fallback
     # even though both match via MRO.
     class WithDunder:
-        def __dask_tokenize__(self):
+        def __dasher_tokenize__(self):
             return ("dunder",)
 
     from dasher.core import fqn
