@@ -17,6 +17,7 @@ _CODE_ATTRS = (
     "co_name",
     "co_names",
     "co_nlocals",
+    "co_posonlyargcount",
     "co_stacksize",
     "co_varnames",
 )
@@ -33,14 +34,7 @@ _FUNCTION_ATTRS = (
 )
 
 
-def _unwrap(obj):
-    while hasattr(obj, "__wrapped__"):
-        obj = obj.__wrapped__
-    return obj
-
-
 def normalize_function(func):
-    func = _unwrap(func)
     return ("function", *(getattr(func, a, None) for a in _FUNCTION_ATTRS))
 
 
@@ -48,8 +42,15 @@ def normalize_code(code):
     return ("code", *(getattr(code, a, None) for a in _CODE_ATTRS))
 
 
+_EMPTY_CELL = object()
+
+
 def normalize_cell(cell):
-    return ("cell", cell.cell_contents)
+    try:
+        contents = cell.cell_contents
+    except ValueError:
+        contents = _EMPTY_CELL
+    return ("cell", contents)
 
 
 RULES: tuple = (
@@ -58,4 +59,5 @@ RULES: tuple = (
     (fqn(types.CodeType),     normalize_code),
     (fqn(types.CellType),     normalize_cell),
     (fqn(classmethod),        normalize_function),
+    (fqn(staticmethod),       normalize_function),
 )
